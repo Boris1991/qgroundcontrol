@@ -1,0 +1,1 @@
+set(QGC_APPLICATION_NAME "Custom QGroundControl")

@@ -25,12 +25,33 @@ elseif(WIN32)
 endif()
 
 #######################################################
+#                Application Configuration
+#            Can be overridden by custom build
+#######################################################
+
+set(QGC_APPLICATION_NAME "QGroundControl")
+set(QGC_ORG_NAME "QGroundControl.org")
+set(QGC_ORG_DOMAIN "org.qgroundcontrol")
+set(QGC_COPYRIGHT "Copyright (c) 2024 QGroundControl. All rights reserved.")
+set(QGC_DESCRIPTION "Open Source Ground Control App")
+
+#######################################################
+#                Custom Build Configuration
+#######################################################
+
+if(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/custom)
+    message(STATUS "Enabling custom build")
+    set(QGC_CUSTOM_BUILD ON)
+    include(${CMAKE_SOURCE_DIR}/custom/CustomBuild.cmake)
+endif()
+
+#######################################################
 #                   Project Info
 #######################################################
 
 project(QGroundControl
     VERSION 5.0
-    DESCRIPTION "Open Source Ground Control App"
+    DESCRIPTION ${QGC_DESCRIPTION}
     HOMEPAGE_URL "https://qgroundcontrol.com/"
     LANGUAGES C CXX
 )
@@ -181,8 +202,6 @@ if(QGC_BUILD_TESTING)
     add_compile_definitions(UNITTEST_BUILD) # TODO: QGC_UNITTEST_BUILD
 endif()
 
-# option(QGC_CUSTOM_BUILD "Enable Custom Build" OFF)
-
 # option(QGC_DISABLE_MAVLINK_INSPECTOR "Disable Mavlink Inspector" OFF) # This removes QtCharts which is GPL licensed
 
 cmake_dependent_option(QGC_DEBUG_QML "Build QGroundControl with QML debugging/profiling support." OFF "CMAKE_BUILD_TYPE STREQUAL Debug" OFF)
@@ -194,13 +213,27 @@ endif()
 cmake_dependent_option(QGC_NO_SERIAL_LINK "Build QGroundControl without Serial Support Support." OFF "NOT IOS" ON)
 
 #######################################################
+#                Custom Build Configuration
+#######################################################
+
+if(QGC_CUSTOM_BUILD)
+    add_subdirectory(custom)
+endif()
+
+#######################################################
 #                QGroundControl Resources
 #######################################################
 
-set(QGC_RESOURCES
-    ${CMAKE_SOURCE_DIR}/qgcimages.qrc
-    ${CMAKE_SOURCE_DIR}/qgcresources.qrc
-    ${CMAKE_SOURCE_DIR}/qgroundcontrol.qrc
+if(NOT QGC_CUSTOM_BUILD)
+    # Custom builds can override the resources
+    list(APPEND QGC_RESOURCES
+        ${CMAKE_SOURCE_DIR}/qgcimages.qrc
+        ${CMAKE_SOURCE_DIR}/qgcresources.qrc
+        ${CMAKE_SOURCE_DIR}/qgroundcontrol.qrc
+    )
+endif()
+
+list(APPEND QGC_RESOURCES
     ${CMAKE_SOURCE_DIR}/resources/InstrumentValueIcons/InstrumentValueIcons.qrc
     ${CMAKE_SOURCE_DIR}/src/FirmwarePlugin/APM/APMResources.qrc
     ${CMAKE_SOURCE_DIR}/src/FirmwarePlugin/PX4/PX4Resources.qrc
@@ -239,6 +272,7 @@ if(Qt6LinguistTools_FOUND)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES QT_RESOURCE_PREFIX "/qgc")
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${QGC_APPLICATION_NAME})
 
 include(Git)
 
@@ -254,12 +288,12 @@ elseif(MACOS)
         PROPERTIES
             MACOSX_BUNDLE TRUE
             MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/deploy/mac/MacOSXBundleInfo.plist.in"
-            MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
+            MACOSX_BUNDLE_BUNDLE_NAME "${QGC_APPLICATION_NAME}"
             MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
-            MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2020 QGroundControl. All rights reserved."
+            MACOSX_BUNDLE_COPYRIGHT "${QGC_COPYRIGHT}"
             MACOSX_BUNDLE_GUI_IDENTIFIER "io.mavlink.qgroundcontrol"
             MACOSX_BUNDLE_ICON_FILE "macx.icns"
-            MACOSX_BUNDLE_INFO_STRING "Open Source Ground Control App"
+            MACOSX_BUNDLE_INFO_STRING "${QGC_DESCRIPTION}"
             MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}"
             MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
     )
@@ -303,9 +337,9 @@ elseif(LINUX)
 endif()
 
 add_compile_definitions(
-    QGC_APPLICATION_NAME="QGroundControl"
-    QGC_ORG_NAME="QGroundControl.org"
-    QGC_ORG_DOMAIN="org.qgroundcontrol"
+    QGC_APPLICATION_NAME="${QGC_APPLICATION_NAME}"
+    QGC_ORG_NAME="${QGC_ORG_NAME}"
+    QGC_ORG_DOMAIN="${QGC_ORG_DOMAIN}"
     APP_VERSION_STR="${APP_VERSION_STR}"
 )
 
