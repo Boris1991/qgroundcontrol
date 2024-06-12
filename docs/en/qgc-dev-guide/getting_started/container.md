@@ -79,3 +79,30 @@ git config --global core.autocrlf false
 ```
 
 Then update/recreate your local repository.
+
+```
+-- Creating AppImage
+fuse: device not found, try 'modprobe fuse' first
+open dir error: No such file or directory
+```
+This can be bypassed by running docker with privileges:
+```bash
+docker run --rm --privileged -v ${PWD}:/project/source -v ${PWD}/build:/project/build qgc-linux-docker
+```
+
+It showed errors about missing libraries:
+```
+ERROR: Could not find dependency: libxcb-icccm.so.4
+ERROR: Could not find dependency: libxcb-keysyms.so.1
+ERROR: Could not find dependency: libxcb-shape.so.0 
+```
+so you need to add them to the file:
+```bash
+nano tools/setup/install-dependencies-debian.sh 
+```
+Add the libraries:
+```bash
+libxcb-icccm4 \
+libxcb-keysyms1 \
+libxcb-shape0 \
+```
